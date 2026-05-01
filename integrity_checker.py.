@@ -1,0 +1,52 @@
+import hashlib
+import os
+
+# 1. Function to calculate the SHA-256 hash of a file
+def calculate_hash(filename):
+    sha256_hash = hashlib.sha256()
+    try:
+        with open(filename, "rb") as f:
+            # Read file in 4KB chunks to handle large files efficiently
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+        return sha256_hash.hexdigest()
+    except FileNotFoundError:
+        return None
+
+# 2. Function to save the 'clean' version of the hash
+def create_baseline(target_file):
+    file_hash = calculate_hash(target_file)
+    if file_hash:
+        with open("baseline.txt", "w") as f:
+            f.write(file_hash)
+        print(f"[+] Baseline created for {target_file}")
+    else:
+        print("[-] Error: File not found.")
+
+# 3. Function to compare current file against the baseline
+def verify_integrity(target_file):
+    if not os.path.exists("baseline.txt"):
+        print("[-] Error: No baseline.txt found. Create one first!")
+        return
+
+    with open("baseline.txt", "r") as f:
+        stored_hash = f.read().strip()
+
+    current_hash = calculate_hash(target_file)
+    
+    if current_hash == stored_hash:
+        print(f"✅ SUCCESS: {target_file} is unchanged.")
+    else:
+        print(f"🚨 ALERT: {target_file} HAS BEEN MODIFIED!")
+
+# --- Simple Menu ---
+filename = "test.txt" # Change this to the file you want to protect
+
+print("1. Create Baseline")
+print("2. Verify Integrity")
+choice = input("Select an option: ")
+
+if choice == "1":
+    create_baseline(filename)
+elif choice == "2":
+    verify_integrity(filename)
